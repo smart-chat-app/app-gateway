@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+#  gateway:
+#    build: ./gateway
+ #   ports:
+      - "443:443"
+#    depends_on:
+#      - chat-service
+##      - auth-service
+##      - notification-service
+#
+#  chat-service:
+#    build: ./chat-service
+#    ports:
+#      - "8081:8081"
+#    depends_on:
+#      - kafka
+#      - redis
+
+#  auth-service:
+#    build: ./auth-service
+#    ports:
+#      - "8082:8082"
+#
+#  notification-service:
+#    build: ./notification-service
+#    ports:
+#      - "8083:8083"
+
+#  ai-service:
+#    build: ./ai-service
+#    ports:
+#      - "8084:8084"
+#    depends_on:
+#      - kafka
