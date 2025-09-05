@@ -1,32 +1,62 @@
 server:
-  port: 443
-  ssl:
-    key-store: classpath:keystore.p12
-    key-store-password: changeit
-    key-store-type: PKCS12
-    key-alias: gateway
+  port: 8083
+
+management:
+  server:
+    port: 9090
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info,prometheus
+    shutdown:
+      access: unrestricted
+
 
 spring:
-  cloud:
-    gateway:
-      routes:
-        - id: chat-service
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/chat/**
-        - id: auth-service
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/auth/**
-        - id: notification-service
-          uri: http://localhost:8083
-          predicates:
-            - Path=/api/notifications/**
-        - id: websocket-chat
-          uri: ws://localhost:8081
-          predicates:
-              - Path=/ws/chat/**
+  data:
+    redis:
+      host: redis
+      port: 6379
+      timeout: 2s
+      client-type: lettuce
+      ssl: false
+  main:
+    web-application-type: reactive
+  docker:
+    compose:
+      enabled: false
+
+  application:
+    name: api-gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_JWKS}
+#  cloud:
+#    gateway:
+#      routes:
+#        - id: chat-service
+#          uri: http://localhost:8081
+#          predicates:
+#            - Path=/api/chat/**
+#        - id: auth-service
+#          uri: http://localhost:8082
+#          predicates:
+#            - Path=/api/auth/**
+#        - id: notification-service
+#          uri: http://localhost:8083
+#          predicates:
+#            - Path=/api/notifications/**
+#        - id: websocket-chat
+#          uri: ws://localhost:8081
+#          predicates:
+#              - Path=/ws/chat/**
 
 logging:
   level:
+    org:
+      springframework:
+        security: DEBUG
     org.springframework.cloud.gateway: DEBUG
