@@ -24,7 +24,6 @@ public class SecurityConfig {
                 .build();
     }
 
-    // THEN: protect everything else with JWT
     @Bean
     @Order(0)
     SecurityWebFilterChain appChain(ServerHttpSecurity http) {
