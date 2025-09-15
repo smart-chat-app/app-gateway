@@ -5,25 +5,21 @@ services:
     image: confluentinc/cp-zookeeper:latest
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
-    ports:
-      - "2181:2181"
+    ports: [ "2181:2181" ]
 
   kafka:
     image: confluentinc/cp-kafka:latest
-    depends_on:
-      - zookeeper
+    depends_on: [ zookeeper ]
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    ports:
-      - "9092:9092"
+    ports: [ "9092:9092" ]
 
   redis:
     image: redis:7
-    ports:
-      - "6379:6379"
+    ports: [ "6379:6379" ]
     healthcheck:
       test: ["CMD", "redis-cli", "PING"]
       interval: 5s
@@ -32,57 +28,32 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:24.0
-    command: [ "start-dev", "--import-realm" ]
+    command: [ "start-dev", "--import-realm", "--proxy=edge" ]
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
+      # 👇 make tokens & discovery use http://localhost:8088
+      KC_HOSTNAME_URL: http://localhost:8088
+      KC_HOSTNAME_ADMIN_URL: http://localhost:8088
     volumes:
       - ./keycloak/realms:/opt/keycloak/data/import:ro
     ports:
       - "8088:8080"   # host:container
 
-
   gateway:
     build: ./
-    # Gateway can call Keycloak by the **internal** DNS name 'keycloak:8080'
-    environment:
-      KEYCLOAK_JWKS: http://keycloak:8080/realms/im/protocol/openid-connect/certs
     depends_on:
       keycloak:
         condition: service_started
       redis:
         condition: service_healthy
+    environment:
+      # 👇 issuer used to validate the 'iss' claim (public host URL)
+      ISSUER_URI: http://localhost:8088/realms/chat-local
+      # 👇 JWKS fetched over Docker network (internal)
+      KEYCLOAK_JWKS: http://keycloak:8080/realms/chat-local/protocol/openid-connect/certs
     ports:
       - "8083:8083"
-      - "9090:9090"   # actuator traffic
-#    depends_on:
-#      - chat-service
-##      - auth-service
-##      - notification-service
-#
-#  chat-service:
-#    build: ./chat-service
-#    ports:
-#      - "8081:8081"
-#    depends_on:
-#      - kafka
-#      - redis
-
-#  auth-service:
-#    build: ./auth-service
-#    ports:
-#      - "8082:8082"
-#
-#  notification-service:
-#    build: ./notification-service
-#    ports:
-#      - "8083:8083"
-
-#  ai-service:
-#    build: ./ai-service
-#    ports:
-#      - "8084:8084"
-#    depends_on:
-#      - kafka
+      - "9090:9090"
