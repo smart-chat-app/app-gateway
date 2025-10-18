@@ -8,7 +8,7 @@ management:
     web:
       base-path: /actuator
       exposure:
-        include: health,info,prometheus
+        include: health,info,prometheus,gateway
     shutdown:
       access: unrestricted
 
@@ -42,6 +42,11 @@ spring:
           uri: http://user-profile-service:8081
           predicates:
             - Path=/users,/users/**
+          filters:
+            - name: RewritePath
+              args:
+                regexp: "^/users(?<segment>/.*)?$"
+                replacement: "/api/users${segment:-/}"
         - id: chat
           uri: http://chat-service:8082
           predicates:
@@ -62,6 +67,16 @@ spring:
           uri: http://ai-orchestrator-service:8090
           predicates:
             - Path=/ai,/ai/**
+        - id: debug
+          uri: https://postman-echo.com
+          predicates:
+            - Path=/debug,/debug/**
+        - id: realtime-ws
+          uri: ws://realtime-service:8094
+          predicates: [ Path=/realtime ]
+          filters:
+            - RemoveRequestHeader=Cookie
+
 
   data:
     redis:
