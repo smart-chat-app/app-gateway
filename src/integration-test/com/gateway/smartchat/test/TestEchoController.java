@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-class TestEchoController {
+public class TestEchoController {
     @RequestMapping("/__echo/**")
     Map<String, Object> echo(ServerHttpRequest req) {
         return Map.of("path", req.getURI().getPath());

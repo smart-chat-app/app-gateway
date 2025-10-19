@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "ISSUER_URI=http://localhost:9996/realms/test"
 })
 @WebFluxTest(controllers = GlobalErrorHandlerTest.Ctrl.class)
-class GlobalErrorHandlerTest {
+public class GlobalErrorHandlerTest {
 
     @Configuration
     static class Cfg {

@@ -1,25 +1,26 @@
 {
   "realm": "im",
   "enabled": true,
+
   "registrationAllowed": true,
   "loginWithEmailAllowed": true,
   "resetPasswordAllowed": true,
+
   "roles": {
     "realm": [
-      {
-        "name": "user"
-      },
-      {
-        "name": "admin"
-      }
+      { "name": "user", "description": "Default user role" },
+      { "name": "admin", "description": "Administrator role" }
     ]
   },
+
   "clients": [
     {
       "clientId": "chat-spa",
       "name": "Chat Frontend (SPA)",
-      "publicClient": true,
       "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
       "redirectUris": [
         "http://localhost:5173/*",
         "http://localhost:3000/*"
@@ -28,22 +29,21 @@
         "http://localhost:5173",
         "http://localhost:3000"
       ],
-      "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true,
       "attributes": {
-        "pkce.code.challenge.method": "S256"
-      },
-      "accessTokenSignedResponseAlg": "RS256"
+        "pkce.code.challenge.method": "S256",
+        "access.token.signed.response.alg": "RS256"
+      }
     },
     {
       "clientId": "gateway",
-      "name": "Gateway API",
+      "name": "Gateway API (bearer-only)",
       "protocol": "openid-connect",
       "bearerOnly": true,
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false
     }
   ],
+
   "users": [
     {
       "username": "alice",
@@ -53,15 +53,21 @@
       "firstName": "Alice",
       "lastName": "User",
       "credentials": [
-        {
-          "type": "password",
-          "value": "alice",
-          "temporary": false
-        }
+        { "type": "password", "value": "alice", "temporary": false }
       ],
-      "realmRoles": [
-        "user"
-      ]
+      "realmRoles": [ "user" ]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin@example.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "credentials": [
+        { "type": "password", "value": "admin", "temporary": false }
+      ],
+      "realmRoles": [ "admin" ]
     }
   ]
 }

@@ -1,0 +1,108 @@
+server:
+  port: 8083
+
+management:
+  server:
+    port: 9090
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info,prometheus,gateway
+    shutdown:
+      access: unrestricted
+
+
+spring:
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: 3000
+        response-timeout: 10s
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        - RemoveRequestHeader=Cookie
+        - name: RequestSize
+          args: { maxSize: 5MB }
+        - name: RequestRateLimiter
+          args:
+            key-resolver: "#{@principalOrIpKeyResolver}"
+            redis-rate-limiter.replenishRate: ${RL_REPLENISH:20}
+            redis-rate-limiter.burstCapacity: ${RL_BURST:40}
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+            allowedMethods: [ GET,POST,PUT,DELETE,OPTIONS,PATCH ]
+            allowedHeaders: [ Authorization,Content-Type,X-Request-Id ]
+            allowCredentials: true
+      routes:
+        - id: user-profile
+          uri: http://user-profile-service:8081
+          predicates:
+            - Path=/users,/users/**
+          filters:
+            - name: RewritePath
+              args:
+                regexp: "^/users(?<segment>/.*)?$"
+                replacement: "/api/users${segment:-/}"
+        - id: chat
+          uri: http://127.0.0.1:8082
+          predicates:
+            - Path=/chats,/chats/**
+        - id: message
+          uri: http://127.0.0.1:8083
+          predicates:
+            - Path=/messages,/messages/**,/chats/*/messages,/chats/*/messages/**
+        - id: presence
+          uri: http://127.0.0.1:8085
+          predicates:
+            - Path=/presence,/presence/**,/typing,/typing/**
+        - id: media
+          uri: http://127.0.0.1:8086
+          predicates:
+            - Path=/media,/media/**
+        - id: ai
+          uri: http://127.0.0.1:8090
+          predicates:
+            - Path=/ai,/ai/**
+        - id: debug
+          uri: https://postman-echo.com
+          predicates:
+            - Path=/debug,/debug/**
+        - id: realtime-ws
+          uri: ws://127.0.0.1:8094
+          predicates: [ Path=/realtime ]
+          filters:
+            - RemoveRequestHeader=Cookie
+
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+      timeout: 2s
+      client-type: lettuce
+      ssl: false
+  main:
+    web-application-type: reactive
+  docker:
+    compose:
+      enabled: false
+
+  application:
+    name: api-gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ISSUER_URI}
+          jwk-set-uri: ${KEYCLOAK_JWKS}
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
+    org.springframework.cloud.gateway: DEBUG
