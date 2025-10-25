@@ -1,0 +1,73 @@
+{
+  "realm": "im",
+  "enabled": true,
+
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "resetPasswordAllowed": true,
+
+  "roles": {
+    "realm": [
+      { "name": "user", "description": "Default user role" },
+      { "name": "admin", "description": "Administrator role" }
+    ]
+  },
+
+  "clients": [
+    {
+      "clientId": "chat-spa",
+      "name": "Chat Frontend (SPA)",
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://localhost:3000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "access.token.signed.response.alg": "RS256"
+      }
+    },
+    {
+      "clientId": "gateway",
+      "name": "Gateway API (bearer-only)",
+      "protocol": "openid-connect",
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    }
+  ],
+
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "alice@example.com",
+      "firstName": "Alice",
+      "lastName": "User",
+      "credentials": [
+        { "type": "password", "value": "alice", "temporary": false }
+      ],
+      "realmRoles": [ "user" ]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin@example.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "credentials": [
+        { "type": "password", "value": "admin", "temporary": false }
+      ],
+      "realmRoles": [ "admin" ]
+    }
+  ]
+}

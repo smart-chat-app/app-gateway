@@ -1,25 +1,25 @@
 package com.smartchat.gateway.configuration;
 
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.stereotype.Component;
-import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-import java.util.Optional;
 import java.util.UUID;
 
-@Component
-public class CorrelationIdFilter implements GlobalFilter {
+@Configuration
+public class CorrelationIdFilter {
+    public static final String CORRELATION_ID = "X-Correlation-Id";
 
-    private static final String HDR = "X-Request-Id";
-
-    @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        var req = exchange.getRequest();
-        var id = Optional.ofNullable(req.getHeaders().getFirst(HDR))
-                .orElse(UUID.randomUUID().toString());
-        var mutated = exchange.mutate().request(b -> b.headers(h -> h.set(HDR, id))).build();
-        return chain.filter(mutated);
+    @Bean
+    public GlobalFilter correlationFilter() {
+        return (exchange, chain) -> {
+            var headers = exchange.getRequest().getHeaders();
+            var cid = headers.getFirst(CORRELATION_ID);
+            if (cid == null || cid.isBlank()) {
+                cid = UUID.randomUUID().toString();
+            }
+            var req = exchange.getRequest().mutate().header(CORRELATION_ID, cid).build();
+            return chain.filter(exchange.mutate().request(req).build());
+        };
     }
 }
