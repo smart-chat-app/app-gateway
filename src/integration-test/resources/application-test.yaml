@@ -47,6 +47,12 @@ spring:
               args:
                 regexp: "^/users(?<segment>/.*)?$"
                 replacement: "/api/users${segment:-/}"
+        - id: users-service
+          uri: ${USERS_SERVICE_URI:http://127.0.0.1:8087}
+          predicates:
+            - Path=/users-service,/users-service/**
+          filters:
+            - StripPrefix=1
         - id: chat
           uri: http://127.0.0.1:8082
           predicates:
@@ -99,6 +105,14 @@ spring:
         jwt:
           issuer-uri: ${ISSUER_URI}
           jwk-set-uri: ${KEYCLOAK_JWKS}
+keycloak:
+  admin:
+    base-url: ${KEYCLOAK_BASE_URL:http://127.0.0.1:8088}
+    realm: ${KEYCLOAK_REALM:chat-local}
+    admin-realm: ${KEYCLOAK_ADMIN_REALM:master}
+    client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}
+    username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+    password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
 
 logging:
   level:
