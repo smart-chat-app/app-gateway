@@ -105,6 +105,10 @@ spring:
         jwt:
           issuer-uri: ${ISSUER_URI}
           jwk-set-uri: ${KEYCLOAK_JWKS}
+users:
+  service:
+    base-url: ${USERS_SERVICE_URI:http://127.0.0.1:8087}
+    create-path: /create
 keycloak:
   admin:
     base-url: ${KEYCLOAK_BASE_URL:http://127.0.0.1:8088}

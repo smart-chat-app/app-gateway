@@ -15,15 +15,18 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/users")
 public class UserProvisioningController {
 
+    private final UserServiceClient userServiceClient;
     private final KeycloakUserClient userClient;
 
-    public UserProvisioningController(KeycloakUserClient userClient) {
+    public UserProvisioningController(UserServiceClient userServiceClient, KeycloakUserClient userClient) {
+        this.userServiceClient = userServiceClient;
         this.userClient = userClient;
     }
 
     @PostMapping("/create")
     public Mono<ResponseEntity<Void>> create(@Valid @RequestBody CreateUserRequest request) {
-        return userClient.createUser(request)
+        return userServiceClient.createUser(request)
+                .then(userClient.createUser(request))
                 .thenReturn(ResponseEntity.status(HttpStatus.CREATED).build());
     }
 }
