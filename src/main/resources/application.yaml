@@ -39,14 +39,9 @@ spring:
             allowCredentials: true
       routes:
         - id: user-profile
-          uri: http://user-profile-service:8081
+          uri: http://users-service:8090
           predicates:
             - Path=/users,/users/**
-          filters:
-            - name: RewritePath
-              args:
-                regexp: "^/users(?<segment>/.*)?$"
-                replacement: "/api/users${segment:-/}"
         - id: users-service
           uri: ${USERS_SERVICE_URI:http://users-service:8087}
           predicates:
@@ -85,6 +80,8 @@ spring:
 
 
   data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI}
     redis:
       host: redis
       port: 6379
@@ -107,7 +104,7 @@ spring:
           jwk-set-uri: ${KEYCLOAK_JWKS}
 users:
   service:
-    base-url: ${USERS_SERVICE_URI:http://users-service:8087}
+    base-url: ${USERS_SERVICE_URI:http://users-service:8090}
     create-path: /create
 keycloak:
   admin:

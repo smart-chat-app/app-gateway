@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 @Component
 public class TrustedUserIdFilter implements GlobalFilter, Ordered {
 
-    static final String USER_ID_HEADER = "X-User-Id";
+    public static final String USER_ID_HEADER = "X-User-Id";
     static final int USER_ID_LENGTH = 26;
 
     @Override

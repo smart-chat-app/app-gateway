@@ -21,6 +21,7 @@ public class SecurityConfig {
                 .authorizeExchange(ex -> ex
                         .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers("/users/create").permitAll()
                         .anyExchange().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .build();

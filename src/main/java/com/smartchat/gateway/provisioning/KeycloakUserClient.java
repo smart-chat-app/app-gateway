@@ -3,9 +3,11 @@ package com.smartchat.gateway.provisioning;
 import java.util.List;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.smartchat.gateway.configuration.KeycloakAdminProperties;
@@ -31,7 +33,7 @@ public class KeycloakUserClient {
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(KeycloakUserRepresentation.from(request))
                         .retrieve()
-                        .onStatus(status -> status.isError(), response -> response.createException())
+                        .onStatus(HttpStatusCode::isError, ClientResponse::createException)
                         .bodyToMono(Void.class));
     }
 
@@ -44,7 +46,7 @@ public class KeycloakUserClient {
                         .with("username", properties.username())
                         .with("password", properties.password()))
                 .retrieve()
-                .onStatus(status -> status.isError(), response -> response.createException())
+                .onStatus(HttpStatusCode::isError, ClientResponse::createException)
                 .bodyToMono(TokenResponse.class)
                 .map(TokenResponse::accessToken);
     }

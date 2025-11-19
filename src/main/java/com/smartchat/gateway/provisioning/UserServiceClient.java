@@ -3,6 +3,7 @@ package com.smartchat.gateway.provisioning;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.smartchat.gateway.configuration.UsersServiceProperties;
@@ -26,7 +27,7 @@ public class UserServiceClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, response -> response.createException())
+                .onStatus(HttpStatusCode::isError, ClientResponse::createException)
                 .bodyToMono(Void.class);
     }
 }

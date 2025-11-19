@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/user")
 public class UserProvisioningController {
 
     private final UserServiceClient userServiceClient;
