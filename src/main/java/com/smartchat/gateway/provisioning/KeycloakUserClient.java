@@ -31,16 +31,32 @@ public class KeycloakUserClient {
         this.webClient = builder.baseUrl(properties.baseUrl()).build();
     }
 
-    public Mono<Void> createUser(CreateUserRequest request) {
+    /**
+     * Creates the user in Keycloak and returns the generated Keycloak userId (subject).
+     */
+    public Mono<String> createUser(CreateUserRequest request) {
         return adminToken()
                 .flatMap(token -> webClient.post()
                         .uri(properties.usersPath())
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(KeycloakUserRepresentation.from(request))
-                        .retrieve()
-                        .onStatus(HttpStatusCode::isError, ClientResponse::createException)
-                        .bodyToMono(Void.class));
+                        .exchangeToMono(response -> {
+                            if (response.statusCode().is2xxSuccessful()) {
+                                String location = response.headers()
+                                        .asHttpHeaders()
+                                        .getFirst(HttpHeaders.LOCATION);
+                                if (location == null) {
+                                    return Mono.error(new IllegalStateException(
+                                            "Missing Location header from Keycloak user creation"));
+                                }
+                                String userId = location.substring(location.lastIndexOf('/') + 1);
+                                return Mono.just(userId);
+                            }
+                            return response.bodyToMono(String.class)
+                                    .flatMap(body -> Mono.error(new IllegalStateException(
+                                            "Error creating user in Keycloak: " + body)));
+                        }));
     }
 
     private Mono<String> adminToken() {
@@ -69,9 +85,10 @@ public class KeycloakUserClient {
                                               boolean enabled,
                                               Map<String, List<String>> attributes,
                                               List<CredentialRepresentation> credentials) {
+
         static KeycloakUserRepresentation from(CreateUserRequest request) {
             return new KeycloakUserRepresentation(
-                    request.userId(),
+                    null, // let Keycloak generate the id
                     request.username(),
                     request.displayName(),
                     true,
@@ -81,7 +98,6 @@ public class KeycloakUserClient {
 
         private static Map<String, List<String>> attributesFrom(CreateUserRequest request) {
             Map<String, List<String>> attributes = new LinkedHashMap<>();
-            addAttribute(attributes, "userId", request.userId());
             addAttribute(attributes, "displayName", request.displayName());
             addAttribute(attributes, "bio", request.bio());
             addAttribute(attributes, "avatarUrl", request.avatarUrl());
@@ -95,7 +111,8 @@ public class KeycloakUserClient {
         }
 
         private static List<CredentialRepresentation> credentialsFrom(CreateUserRequest request) {
-            return List.of(new CredentialRepresentation("password", false, hashedPassword(request.userId())));
+            // For now derive an initial password from the username; adjust if you have a real password flow
+            return List.of(new CredentialRepresentation("password", false, hashedPassword(request.username())));
         }
 
         private static String hashedPassword(String input) {

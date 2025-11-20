@@ -1,5 +1,5 @@
 {
-  "realm": "im",
+  "realm": "chat-local",
   "enabled": true,
 
   "registrationAllowed": true,

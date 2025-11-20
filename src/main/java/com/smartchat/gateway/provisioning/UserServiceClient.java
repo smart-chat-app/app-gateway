@@ -1,5 +1,8 @@
 package com.smartchat.gateway.provisioning;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
@@ -21,11 +24,25 @@ public class UserServiceClient {
         this.webClient = builder.baseUrl(properties.baseUrl()).build();
     }
 
-    public Mono<Void> createUser(CreateUserRequest request) {
+    /**
+     * Create the user in the users-service database using the Keycloak userId.
+     */
+    public Mono<Void> createUser(String userId, CreateUserRequest request) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("userId", userId);
+        payload.put("username", request.username());
+        payload.put("displayName", request.displayName());
+        if (request.bio() != null) {
+            payload.put("bio", request.bio());
+        }
+        if (request.avatarUrl() != null) {
+            payload.put("avatarUrl", request.avatarUrl());
+        }
+
         return webClient.post()
-                .uri(properties.createPath())
+                .uri(properties.createPath())   // <- this should now be "/users/create"
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
+                .bodyValue(payload)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, ClientResponse::createException)
                 .bodyToMono(Void.class);

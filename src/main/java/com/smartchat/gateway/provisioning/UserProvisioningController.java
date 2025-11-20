@@ -23,10 +23,15 @@ public class UserProvisioningController {
         this.userClient = userClient;
     }
 
+    /**
+     * Public endpoint used to provision a new user:
+     *  1) Create the user in Keycloak
+     *  2) Create the user in the users-service DB using the Keycloak userId as userId
+     */
     @PostMapping("/create")
     public Mono<ResponseEntity<Void>> create(@Valid @RequestBody CreateUserRequest request) {
-        return userServiceClient.createUser(request)
-                .then(userClient.createUser(request))
+        return userClient.createUser(request)
+                .flatMap(keycloakUserId -> userServiceClient.createUser(keycloakUserId, request))
                 .thenReturn(ResponseEntity.status(HttpStatus.CREATED).build());
     }
 }

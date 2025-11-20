@@ -42,12 +42,6 @@ spring:
           uri: http://users-service:8090
           predicates:
             - Path=/users,/users/**
-        - id: users-service
-          uri: ${USERS_SERVICE_URI:http://users-service:8087}
-          predicates:
-            - Path=/users-service,/users-service/**
-          filters:
-            - StripPrefix=1
         - id: chat
           uri: http://chat-service:8082
           predicates:
@@ -105,7 +99,7 @@ spring:
 users:
   service:
     base-url: ${USERS_SERVICE_URI:http://users-service:8090}
-    create-path: /create
+    create-path: /users/create
 keycloak:
   admin:
     base-url: ${KEYCLOAK_BASE_URL:http://keycloak:8080}
