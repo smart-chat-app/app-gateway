@@ -63,13 +63,15 @@ public class KeycloakUserClient {
         }
     }
 
-    private record KeycloakUserRepresentation(String username,
+    private record KeycloakUserRepresentation(String id,
+                                              String username,
                                               String firstName,
                                               boolean enabled,
                                               Map<String, List<String>> attributes,
                                               List<CredentialRepresentation> credentials) {
         static KeycloakUserRepresentation from(CreateUserRequest request) {
             return new KeycloakUserRepresentation(
+                    request.userId(),
                     request.username(),
                     request.displayName(),
                     true,

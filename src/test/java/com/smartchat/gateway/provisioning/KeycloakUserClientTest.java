@@ -56,6 +56,7 @@ class KeycloakUserClientTest {
                 .withHeader("Authorization", equalTo("Bearer abc"))
                 .withRequestBody(equalToJson("""
                         {
+                          "id": "abc-1200709",
                           "username": "user_abc124",
                           "firstName": "frank3",
                           "enabled": true,
