@@ -56,19 +56,33 @@ class KeycloakUserClientTest {
                 .withHeader("Authorization", equalTo("Bearer abc"))
                 .withRequestBody(equalToJson("""
                         {
-                          "username": "alice",
-                          "email": "alice@example.com",
-                          "firstName": "Alice",
-                          "lastName": "User",
+                          "id": "abc-1200709",
+                          "username": "user_abc124",
+                          "firstName": "frank3",
                           "enabled": true,
+                          "attributes": {
+                            "userId": ["abc-1200709"],
+                            "displayName": ["frank3"],
+                            "bio": ["test-test"],
+                            "avatarUrl": ["https://example.com/avatar.png"]
+                          },
                           "credentials": [
-                            { "type": "password", "value": "secret", "temporary": false }
+                            {
+                              "type": "password",
+                              "temporary": false,
+                              "value": "jlUCWIGMrnSavzpqpC600tIGxuiQBRNiKMl4lt50MRM"
+                            }
                           ]
                         }
                         """))
                 .willReturn(aResponse().withStatus(201)));
 
-        CreateUserRequest request = new CreateUserRequest("alice", "alice@example.com", "Alice", "User", "secret");
+        CreateUserRequest request = new CreateUserRequest(
+                "abc-1200709",
+                "user_abc124",
+                "frank3",
+                "test-test",
+                "https://example.com/avatar.png");
 
         StepVerifier.create(client.createUser(request)).verifyComplete();
     }*/
