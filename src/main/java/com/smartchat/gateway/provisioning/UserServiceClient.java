@@ -32,6 +32,9 @@ public class UserServiceClient {
         payload.put("userId", userId);
         payload.put("username", request.username());
         payload.put("displayName", request.displayName());
+        if (request.email() != null) {
+            payload.put("email", request.email());
+        }
         if (request.bio() != null) {
             payload.put("bio", request.bio());
         }

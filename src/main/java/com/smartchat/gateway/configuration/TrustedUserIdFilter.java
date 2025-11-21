@@ -1,71 +1,68 @@
 package com.smartchat.gateway.configuration;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
-import java.util.Locale;
-
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.core.Ordered;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
-
 import reactor.core.publisher.Mono;
 
 @Component
 public class TrustedUserIdFilter implements GlobalFilter, Ordered {
 
-    public static final String USER_ID_HEADER = "X-User-Id";
-    static final int USER_ID_LENGTH = 26;
+    private static final String USER_ID_HEADER = "X-User-Id";
 
     @Override
     public int getOrder() {
-        return Ordered.LOWEST_PRECEDENCE;
+        // run after UserIdForwardingFilter (-10), but before routing
+        return -5;
     }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        ServerHttpRequest sanitized = exchange.getRequest().mutate()
-                .headers(headers -> headers.remove(USER_ID_HEADER))
-                .build();
-        ServerWebExchange sanitizedExchange = exchange.mutate().request(sanitized).build();
+        String path = exchange.getRequest().getPath().value();
+        HttpMethod method = exchange.getRequest().getMethod();
 
-        return exchange.getPrincipal()
-                .cast(Authentication.class)
-                .map(this::resolveUserId)
-                .map(userId -> sanitizedExchange.mutate()
-                        .request(sanitizedExchange.getRequest().mutate().header(USER_ID_HEADER, userId).build())
-                        .build())
-                .defaultIfEmpty(sanitizedExchange)
-                .flatMap(chain::filter);
+        // 1. Skip enforcement for public endpoints
+        if (isPublic(path, method)) {
+            return chain.filter(exchange);
+        }
+
+        // 2. Enforce presence of X-User-Id
+        String userId = exchange.getRequest().getHeaders().getFirst(USER_ID_HEADER);
+        if (userId == null || userId.isBlank()) {
+            return Mono.error(new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Missing X-User-Id header"));
+        }
+
+        return chain.filter(exchange);
     }
 
-    private String resolveUserId(Authentication authentication) {
-        String raw;
-        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
-            raw = jwtAuthenticationToken.getToken().getSubject();
-        } else {
-            raw = authentication.getName();
+    private boolean isPublic(String path, HttpMethod method) {
+        if (method == HttpMethod.OPTIONS) {
+            return true;
         }
-        return safeUserId(raw);
-    }
 
-    private String safeUserId(String subject) {
-        if (subject == null || subject.isBlank()) {
-            return "anonymous";
+        // Actuator / health
+        if (path.startsWith("/actuator")) {
+            return true;
         }
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(subject.toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8));
-            String encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
-            return encoded.substring(0, Math.min(USER_ID_LENGTH, encoded.length()));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Missing SHA-256 algorithm", e);
+
+        // User provisioning endpoint (no auth, creates Keycloak + user-service)
+        if (path.startsWith("/user/create")) {
+            return true;
         }
+
+        // Users health (proxied to users-service)
+        if (path.startsWith("/users/health")) {
+            return true;
+        }
+
+        // API docs / Swagger
+        return path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui");
     }
 }
